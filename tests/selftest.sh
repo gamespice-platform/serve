@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# dotserve self-test.
+# gsserve self-test.
 #
 #   tests/selftest.sh
 #
@@ -18,7 +18,7 @@
 set -uo pipefail
 
 readonly ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-readonly DOTSERVE="$ROOT/dotserve"
+readonly GSSERVE="$ROOT/gsserve"
 readonly TMP="$ROOT/tests/tmp"
 
 PASSED=0
@@ -76,8 +76,8 @@ if [ "${1:-}" = "--version" ]; then
   echo "4.7.2.stable.official.ed1daf0bf"
   exit 0
 fi
-printf '%s\n' "$@" > "${DOTSERVE_TEST_ARGS:-/dev/null}"
-exit "${DOTSERVE_FAKE_EXIT:-0}"
+printf '%s\n' "$@" > "${GSSERVE_TEST_ARGS:-/dev/null}"
+exit "${GSSERVE_FAKE_EXIT:-0}"
 FAKE
   chmod +x "$TMP/bin/godot"
 
@@ -117,8 +117,8 @@ teardown() {
 # often taken by a running game server on the same box, which made the suite flaky.
 FREE_PORT="$(python3 -c 'import socket; s=socket.socket(); s.bind(("",0)); print(s.getsockname()[1])')"
 
-run_dotserve() {
-  "$DOTSERVE" --godot "$TMP/bin/godot" --project "$TMP/project" --port "${DOTSERVE_TEST_PORT:-$FREE_PORT}" "$@" 2>&1
+run_gsserve() {
+  "$GSSERVE" --godot "$TMP/bin/godot" --project "$TMP/project" --port "${GSSERVE_TEST_PORT:-$FREE_PORT}" "$@" 2>&1
 }
 
 # --- Discovery --------------------------------------------------------------
@@ -127,18 +127,18 @@ test_project_discovery() {
   group "finding the project"
 
   local out
-  out="$(cd "$TMP/project/sub/deeper" && "$DOTSERVE" --godot "$TMP/bin/godot" \
+  out="$(cd "$TMP/project/sub/deeper" && "$GSSERVE" --godot "$TMP/bin/godot" \
     --config "$TMP/config" --print-config 2>&1)"
   check_contains "$out" "$TMP/project" \
     "a project is found by walking up from a subdirectory"
 
-  out="$("$DOTSERVE" --godot "$TMP/bin/godot" --project "$TMP/logs" \
+  out="$("$GSSERVE" --godot "$TMP/bin/godot" --project "$TMP/logs" \
     --config "$TMP/config" --print-config 2>&1)"
   local status=$?
   check_contains "$out" "no project.godot" \
     "a directory with no project.godot is refused"
 
-  out="$(cd / && "$DOTSERVE" --godot "$TMP/bin/godot" --config "$TMP/config" \
+  out="$(cd / && "$GSSERVE" --godot "$TMP/bin/godot" --config "$TMP/config" \
     --print-config 2>&1)"
   check_contains "$out" "no project.godot" \
     "and so is running from somewhere with no project above it"
@@ -148,23 +148,23 @@ test_godot_discovery() {
   group "finding Godot"
 
   local out
-  out="$(GODOT="$TMP/bin/godot" "$DOTSERVE" --project "$TMP/project" \
+  out="$(GODOT="$TMP/bin/godot" "$GSSERVE" --project "$TMP/project" \
     --config "$TMP/config" --print-config 2>&1)"
   check_contains "$out" "4.7.2" "\$GODOT is used when it is set"
 
-  out="$("$DOTSERVE" --godot "$TMP/bin/godot-old" --project "$TMP/project" \
+  out="$("$GSSERVE" --godot "$TMP/bin/godot-old" --project "$TMP/project" \
     --config "$TMP/config" --print-config 2>&1)"
   check_contains "$out" "4.7 or newer" \
     "an old Godot is refused with a version message"
   check_missing "$out" "project      " \
     "and the run stops rather than continuing"
 
-  out="$("$DOTSERVE" --godot "$TMP/bin/godot-just-old" --project "$TMP/project" \
+  out="$("$GSSERVE" --godot "$TMP/bin/godot-just-old" --project "$TMP/project" \
     --config "$TMP/config" --print-config 2>&1)"
   check_contains "$out" "4.7 or newer" \
     "and so is the release immediately below the floor"
 
-  out="$("$DOTSERVE" --godot "$TMP/bin/nonexistent" --project "$TMP/project" \
+  out="$("$GSSERVE" --godot "$TMP/bin/nonexistent" --project "$TMP/project" \
     --print-config 2>&1)"
   check_contains "$out" "not executable" "a --godot that is not there is refused"
 }
@@ -178,7 +178,7 @@ test_first_run() {
   rm -rf "$dir"
 
   local out
-  out="$(run_dotserve --config "$dir" --dry-run)"
+  out="$(run_gsserve --config "$dir" --dry-run)"
 
   check "$([ -f "$dir/server.cfg" ] && echo 1 || echo 0)" \
     "a server.cfg is written on first run"
@@ -202,7 +202,7 @@ test_first_run() {
   # configuration, and regenerating on upgrade throws them away on the one run
   # nobody is watching.
   printf '\n// operator edit\nsv_gravity 800\n' >> "$dir/server.cfg"
-  out="$(run_dotserve --config "$dir" --dry-run)"
+  out="$(run_gsserve --config "$dir" --dry-run)"
   check_contains "$(cat "$dir/server.cfg")" "operator edit" \
     "a second run does not overwrite it"
   check_missing "$out" "RCON password is" \
@@ -220,11 +220,11 @@ test_rcon_refusal() {
   local dir="$TMP/weak"
   local weak out status
 
-  for weak in changeme password admin dotserve "@RCON_PASSWORD@"; do
+  for weak in changeme password admin gsserve "@RCON_PASSWORD@"; do
     rm -rf "$dir"; mkdir -p "$dir"
     printf 'hostname "x"\nrcon_password "%s"\n' "$weak" > "$dir/server.cfg"
 
-    out="$(run_dotserve --config "$dir" --dry-run 2>&1)"
+    out="$(run_gsserve --config "$dir" --dry-run 2>&1)"
     status=$?
 
     check "$([ "$status" -ne 0 ] && echo 1 || echo 0)" \
@@ -235,7 +235,7 @@ test_rcon_refusal() {
   # right setting for a server nobody administers remotely.
   rm -rf "$dir"; mkdir -p "$dir"
   printf 'hostname "x"\nrcon_password ""\n' > "$dir/server.cfg"
-  out="$(run_dotserve --config "$dir" --dry-run 2>&1)"
+  out="$(run_gsserve --config "$dir" --dry-run 2>&1)"
   status=$?
   check "$([ "$status" -eq 0 ] && echo 1 || echo 0)" \
     "an empty password is accepted, and means RCON is off" "exit $status"
@@ -243,7 +243,7 @@ test_rcon_refusal() {
 
   rm -rf "$dir"; mkdir -p "$dir"
   printf 'rcon_password "abc"\n' > "$dir/server.cfg"
-  out="$(run_dotserve --config "$dir" --dry-run 2>&1)"
+  out="$(run_gsserve --config "$dir" --dry-run 2>&1)"
   status=$?
   check "$([ "$status" -ne 0 ] && echo 1 || echo 0)" \
     "and a short one is refused too" "exit $status"
@@ -251,7 +251,7 @@ test_rcon_refusal() {
   rm -rf "$dir"; mkdir -p "$dir"
   printf 'rcon_password "a-genuinely-long-one"\n' > "$dir/server.cfg"
   status=0
-  run_dotserve --config "$dir" --dry-run >/dev/null 2>&1 || status=$?
+  run_gsserve --config "$dir" --dry-run >/dev/null 2>&1 || status=$?
   check "$([ "$status" -eq 0 ] && echo 1 || echo 0)" \
     "while a real password is accepted" "exit $status"
 }
@@ -265,20 +265,20 @@ test_argument_validation() {
 
   for bad in "--port 0" "--port 99999" "--port abc" "--maxplayers 0" "--tickrate 999"; do
     status=0
-    out="$(run_dotserve --config "$TMP/config" $bad --dry-run 2>&1)" || status=$?
+    out="$(run_gsserve --config "$TMP/config" $bad --dry-run 2>&1)" || status=$?
     check "$([ "$status" -ne 0 ] && echo 1 || echo 0)" \
       "'$bad' is refused" "exit $status"
   done
 
   status=0
-  out="$(run_dotserve --config "$TMP/config" --nonsense --dry-run 2>&1)" || status=$?
+  out="$(run_gsserve --config "$TMP/config" --nonsense --dry-run 2>&1)" || status=$?
   check "$([ "$status" -ne 0 ] && echo 1 || echo 0)" \
     "an unknown option is refused rather than ignored" "exit $status"
 
   # Browsers share the game port now (the dual transport), so an old --ws-port is
   # accepted, ignored and said to be, rather than refusing to start a unit file.
   status=0
-  out="$(run_dotserve --config "$TMP/config" --port "$FREE_PORT" --ws-port 27016 \
+  out="$(run_gsserve --config "$TMP/config" --port "$FREE_PORT" --ws-port 27016 \
     --dry-run 2>&1)" || status=$?
   check "$([ "$status" -eq 0 ] && echo 1 || echo 0)" \
     "an old --ws-port still starts" "exit $status"
@@ -292,10 +292,10 @@ test_command_building() {
   # A warm-up run so the config already exists: otherwise the run under test also
   # prints the one-time creation notice, and the password check below would find the
   # password there rather than on the command line it is actually about.
-  run_dotserve --config "$TMP/config" --dry-run >/dev/null 2>&1
+  run_gsserve --config "$TMP/config" --dry-run >/dev/null 2>&1
 
   local out
-  out="$(run_dotserve --config "$TMP/config" --port 27044 --maxplayers 24 \
+  out="$(run_gsserve --config "$TMP/config" --port 27044 --maxplayers 24 \
     --tickrate 128 --name "Test Server" --game "res://games/fatalcontact" --dry-run)"
 
   check_contains "$out" "--headless" "the server runs headless"
@@ -304,13 +304,13 @@ test_command_building() {
   # look for "27044" anywhere in the line, which a --server-port passed for as long as it
   # existed while GameSpice Server ignored every one of them: its prefix is --sv-, and
   # GSConfig.apply_cli skips an argument without it in silence.
-  check_contains "$out" "--sv-port 27044" "on the right port, as dot-server reads it"
+  check_contains "$out" "--sv-port 27044" "on the right port, as gs-server reads it"
   check_contains "$out" "--sv-max-players 24" "with the right player count"
   check_contains "$out" "--sv-tickrate 128" "and the right tick rate"
   check_contains "$out" "--sv-hostname Test\\ Server" "and the right name (printed shell-quoted)"
   check_contains "$out" "--sv-startup-config $TMP/config/server.cfg" "running the operator's server.cfg"
   check_contains "$out" "+changegame res://games/fatalcontact" "loading the right game"
-  check_missing "$out" "--server-" "and no flag dot-server would skip in silence"
+  check_missing "$out" "--server-" "and no flag gs-server would skip in silence"
 
   # The RCON password must never reach a command line: argv is readable by every
   # other process on the machine, and it ends up in pasted bug reports. GameSpice Server's
@@ -322,17 +322,17 @@ test_command_building() {
       "and the RCON password is not on the command line"
   fi
 
-  out="$(run_dotserve --config "$TMP/config" --web --port "$FREE_PORT" --dry-run)"
+  out="$(run_gsserve --config "$TMP/config" --web --port "$FREE_PORT" --dry-run)"
   check_contains "$out" "--sv-transport-mode dual" \
     "--web serves browsers on the game port beside native clients"
-  out="$(run_dotserve --config "$TMP/config" --port "$FREE_PORT" --dry-run)"
+  out="$(run_gsserve --config "$TMP/config" --port "$FREE_PORT" --dry-run)"
   check_contains "$out" "--sv-transport-mode enet" "and without it the server is native only"
 
-  out="$(run_dotserve --config "$TMP/config" --dry-run -- +sv_cheats 1 +map dm_atrium)"
+  out="$(run_gsserve --config "$TMP/config" --dry-run -- +sv_cheats 1 +map dm_atrium)"
   check_contains "$out" "+sv_cheats" "commands after -- are passed through"
   check_contains "$out" "+map" "all of them"
 
-  out="$(run_dotserve --config "$TMP/config" --dry-run +exec autoexec.cfg)"
+  out="$(run_gsserve --config "$TMP/config" --dry-run +exec autoexec.cfg)"
   check_contains "$out" "+exec" "and a bare +command is too"
 }
 
@@ -340,7 +340,7 @@ test_service_unit() {
   group "systemd unit"
 
   local out
-  out="$(run_dotserve --config "$TMP/config" --log "$TMP/logs" --port 27099 \
+  out="$(run_gsserve --config "$TMP/config" --log "$TMP/logs" --port 27099 \
     --install-service 2>&1)"
 
   check_contains "$out" "[Service]" "a unit is printed"
@@ -351,33 +351,33 @@ test_service_unit() {
   check_contains "$out" "ReadWritePaths=$TMP/config" \
     "with the config directory writable and the rest of the filesystem not"
 
-  # dotserve has its own backoff. Two supervisors backing off against each other
+  # gsserve has its own backoff. Two supervisors backing off against each other
   # produce a restart storm that looks like a crash loop.
   check_missing "$out" "--restart" \
-    "and it does not also ask dotserve to supervise itself"
+    "and it does not also ask gsserve to supervise itself"
 }
 
 test_output_hygiene() {
   group "output"
 
   local out
-  out="$(run_dotserve --config "$TMP/config" --quiet --dry-run)"
+  out="$(run_gsserve --config "$TMP/config" --quiet --dry-run)"
   check_missing "$out" "Players on this machine" "--quiet suppresses the banner"
 
-  out="$(NO_COLOR=1 run_dotserve --config "$TMP/config" --print-config)"
+  out="$(NO_COLOR=1 run_gsserve --config "$TMP/config" --print-config)"
   check_missing "$out" $'\033' "NO_COLOR removes escape sequences"
 
-  out="$("$DOTSERVE" --version)"
-  check_contains "$out" "dotserve" "--version prints a version"
+  out="$("$GSSERVE" --version)"
+  check_contains "$out" "gsserve" "--version prints a version"
 
-  out="$("$DOTSERVE" --help)"
+  out="$("$GSSERVE" --help)"
   check_contains "$out" "--install-service" "--help documents every option"
   check_contains "$out" "--dry-run" "including the ones a test depends on"
 }
 
 # --- Run --------------------------------------------------------------------
 
-printf 'dotserve self-test\n'
+printf 'gsserve self-test\n'
 
 setup
 trap teardown EXIT

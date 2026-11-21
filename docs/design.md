@@ -4,7 +4,7 @@ Why the launcher does what it does, and what it deliberately leaves out. The one
 
 ## A launcher, not a framework
 
-It finds the Godot runtime, picks a config directory, writes a commented `server.cfg` the first time, checks a couple of things that are dangerous to get wrong, prints a join address, and execs the engine ([PLATFORM.md](../../../PLATFORM.md) item 9). Everything else stays in dot-server. If a change here starts looking like server behaviour rather than server *starting*, it is in the wrong repository.
+It finds the Godot runtime, picks a config directory, writes a commented `server.cfg` the first time, checks a couple of things that are dangerous to get wrong, prints a join address, and execs the engine ([PLATFORM.md](../../../PLATFORM.md) item 9). Everything else stays in gs-server. If a change here starts looking like server behaviour rather than server *starting*, it is in the wrong repository.
 
 ## The four things it exists to get right
 
@@ -17,11 +17,11 @@ It finds the Godot runtime, picks a config directory, writes a commented `server
 
 `--dry-run` prints the exact command it would run and exits. `--print-config` prints the resolved configuration and exits. Both exist so the interesting part is checkable, and a fake `godot` on `PATH` covers the rest: the suite runs on a machine with no engine installed at all.
 
-That means the one thing **not** covered is whether dot-server actually accepts the argv `build_command` produces. That was meant to be checked by reading against `GSServerConfig`, and the reading was wrong: see the open item in [CLAUDE.md](../CLAUDE.md#open-items).
+That means the one thing **not** covered is whether gs-server actually accepts the argv `build_command` produces. That was meant to be checked by reading against `GSServerConfig`, and the reading was wrong: see the open item in [CLAUDE.md](../CLAUDE.md#open-items).
 
 ## systemd: one supervisor, not two
 
-`--install-service NAME` prints a unit. It sets `Restart=on-failure` and deliberately does **not** pass `--restart`. dotserve has its own exponential backoff, and two supervisors backing off against each other produce a restart storm that reads as a crash loop.
+`--install-service NAME` prints a unit. It sets `Restart=on-failure` and deliberately does **not** pass `--restart`. gsserve has its own exponential backoff, and two supervisors backing off against each other produce a restart storm that reads as a crash loop.
 
 `RestartPreventExitStatus` lists the misconfiguration codes (`EXIT_NO_GODOT`, `EXIT_NO_PROJECT`, `EXIT_CONFIG`, `EXIT_PORT`). A server that cannot find its project will not find it on the ninetieth attempt either, and retrying turns one clear error into a journal full of them.
 
@@ -31,6 +31,6 @@ That means the one thing **not** covered is whether dot-server actually accepts 
 
 - **Downloading Godot.** It finds one; it does not fetch one. A launcher that downloads a binary is a launcher that has to verify a signature, and that is a different program with different risks.
 - **Reading `server.cfg` for anything but `rcon_password`.** `read_cfg_value` is deliberately a one-key `sed` and not a config parser. GameSpice Server's console is the parser, and a second one here would drift from it.
-- **Server listing registration.** Announcing a server to the backbone is dot-auth's `GSBackboneClient` and a running server's job, not a launcher's.
+- **Server listing registration.** Announcing a server to the backbone is gs-auth's `GSBackboneClient` and a running server's job, not a launcher's.
 - **Multi-instance management.** One invocation, one server. Running four is four systemd units with four `--config` directories, which is what `--install-service NAME` is for.
 - **Log rotation.** `--log` names a directory and the server writes into it. Rotation is `logrotate`'s job and doing it badly here would fight it.

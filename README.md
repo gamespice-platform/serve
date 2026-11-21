@@ -1,6 +1,6 @@
-`dotserve` starts a [GameSpice Server](https://github.com/gamespice-platform/server) for you without you needing to know how GameSpice Server works. It is a shell script, not a Godot addon. It needs `bash` and a Godot 4.7+ binary.
+`gsserve` starts a [GameSpice Server](https://github.com/gamespice-platform/server) for you without you needing to know how GameSpice Server works. It is a shell script, not a Godot addon. It needs `bash` and a Godot 4.7+ binary.
 
-GameSpice Server is very configurable (cvars, flags, `server.cfg`, `autoexec.cfg`, `+command` arguments, RCON, layered config from file, environment and command line). `dotserve` is the easy way in.
+GameSpice Server is very configurable (cvars, flags, `server.cfg`, `autoexec.cfg`, `+command` arguments, RCON, layered config from file, environment and command line). `gsserve` is the easy way in.
 
 ## Install
 
@@ -12,14 +12,14 @@ PREFIX=/usr/local/bin sudo ./install.sh
 ## Use
 
 ```bash
-dotserve                             # sensible defaults, prints a join address
-dotserve --game res://games/fc       # a specific game
-dotserve --port 27015 --web          # also listen for browser clients
-dotserve --restart                   # come back up after a crash
-dotserve -- +sv_cheats 1 +map dm_box # pass cvars and commands to the server
+gsserve                             # sensible defaults, prints a join address
+gsserve --game res://games/fc       # a specific game
+gsserve --port 27015 --web          # also listen for browser clients
+gsserve --restart                   # come back up after a crash
+gsserve -- +sv_cheats 1 +map dm_box # pass cvars and commands to the server
 ```
 
-The first run writes a commented `server.cfg` under `~/.config/dotserve`, generates an RCON password and prints it once. Later runs read the file and never touch it.
+The first run writes a commented `server.cfg` under `~/.config/gsserve`, generates an RCON password and prints it once. Later runs read the file and never touch it.
 
 ## What it does for you
 
@@ -32,7 +32,7 @@ The first run writes a commented `server.cfg` under `~/.config/dotserve`, genera
 
 ## Options
 
-Run `dotserve --help` for all of them. The ones worth knowing:
+Run `gsserve --help` for all of them. The ones worth knowing:
 
 | Option | Does |
 | --- | --- |

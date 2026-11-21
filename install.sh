@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Installs dotserve by symlinking it onto PATH.
+# Installs gsserve by symlinking it onto PATH.
 #
-# A symlink rather than a copy, because dotserve reads templates/server.cfg relative
+# A symlink rather than a copy, because gsserve reads templates/server.cfg relative
 # to its own resolved location: a copied script would find no template and fail on the
 # first run of a fresh install, which is the one run that has to work.
 
@@ -22,9 +22,9 @@ while [ $# -gt 0 ]; do
 done
 
 mkdir -p "$PREFIX"
-ln -sf "$ROOT/dotserve" "$PREFIX/dotserve"
+ln -sf "$ROOT/gsserve" "$PREFIX/gsserve"
 
-printf 'Installed %s -> %s\n' "$PREFIX/dotserve" "$ROOT/dotserve"
+printf 'Installed %s -> %s\n' "$PREFIX/gsserve" "$ROOT/gsserve"
 
 case ":$PATH:" in
   *":$PREFIX:"*) ;;

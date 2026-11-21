@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# dotserve — start a dot-server, with a doorbell on the front door.
+# gsserve — start a gs-server, with a doorbell on the front door.
 #
-# dot-server is deeply configurable: cvars, flags, server.cfg, autoexec.cfg,
+# gs-server is deeply configurable: cvars, flags, server.cfg, autoexec.cfg,
 # +command arguments, RCON, and layered configuration from file, environment and
 # argv. What it did not have was a way to start one without knowing all of that.
 #
@@ -11,18 +11,18 @@
 # opens the listener, and prints something a friend can paste.
 #
 # Usage:
-#   dotserve                            sensible defaults, prints a join URL
-#   dotserve --game res://games/fatalcontact   a specific game
-#   dotserve --port 27015 --web         also listen for browser clients
-#   dotserve --dry-run                  print the command and exit
+#   gsserve                            sensible defaults, prints a join URL
+#   gsserve --game res://games/fatalcontact   a specific game
+#   gsserve --port 27015 --web         also listen for browser clients
+#   gsserve --dry-run                  print the command and exit
 #
 # See --help for everything.
 
 set -euo pipefail
 
-readonly DOTSERVE_VERSION="0.1.0"
+readonly GSSERVE_VERSION="0.1.0"
 
-# The oldest engine the dot-* family runs on. Every dot-* project.godot declares
+# The oldest engine the gs-* family runs on. Every gs-* project.godot declares
 # `config/features=PackedStringArray("4.7")`, so an older editor treats them as
 # saved-by-a-newer-version; the family is built and its suites are run on 4.7.x.
 # The gate is here because below it a project silently fails to load rather than
@@ -84,9 +84,9 @@ die() {
 
 usage() {
   cat <<'USAGE'
-dotserve — start a dot-server
+gsserve — start a gs-server
 
-  dotserve [options] [-- +command ...]
+  gsserve [options] [-- +command ...]
 
 Where the game is
   --project DIR         Godot project to run. Default: the current directory, or
@@ -107,9 +107,9 @@ Identity
   --tags TEXT           Free-form tags for a server listing.
 
 Where things live
-  --config DIR          Config directory. Default: $XDG_CONFIG_HOME/dotserve,
-                        then ~/.config/dotserve.
-  --log DIR             Log directory. Default: $XDG_STATE_HOME/dotserve/logs.
+  --config DIR          Config directory. Default: $XDG_CONFIG_HOME/gsserve,
+                        then ~/.config/gsserve.
+  --log DIR             Log directory. Default: $XDG_STATE_HOME/gsserve/logs.
 
 Running
   --restart             Restart on a crash, with exponential backoff.
@@ -126,7 +126,7 @@ Running
 Anything after -- is passed to the server as-is, which is how a console command is
 run at boot:
 
-  dotserve -- +sv_cheats 1 +map dm_atrium
+  gsserve -- +sv_cheats 1 +map dm_atrium
 USAGE
 }
 
@@ -156,13 +156,13 @@ parse_args() {
         if [ $# -ge 2 ] && [ "${2#-}" = "$2" ]; then
           INSTALL_SERVICE="$2"; shift 2
         else
-          INSTALL_SERVICE="dotserve"; shift
+          INSTALL_SERVICE="gsserve"; shift
         fi
         ;;
       --quiet)        QUIET=1; shift ;;
       --no-banner)    NO_BANNER=1; shift ;;
       -h|--help)      usage; exit 0 ;;
-      --version)      printf 'dotserve %s\n' "$DOTSERVE_VERSION"; exit 0 ;;
+      --version)      printf 'gsserve %s\n' "$GSSERVE_VERSION"; exit 0 ;;
       --)             shift; PASSTHROUGH=("$@"); break ;;
       +*)
         # A console command takes its own arguments: `+exec autoexec.cfg` is one
@@ -274,7 +274,7 @@ check_godot_version() {
 
 # --- Finding the project ----------------------------------------------------
 
-# Walks up from the starting directory looking for a project.godot, so dotserve run
+# Walks up from the starting directory looking for a project.godot, so gsserve run
 # anywhere inside a project finds it.
 find_project() {
   local dir="${1:-$PWD}"
@@ -296,11 +296,11 @@ find_project() {
 # --- Configuration ----------------------------------------------------------
 
 default_config_dir() {
-  printf '%s/dotserve\n' "${XDG_CONFIG_HOME:-$HOME/.config}"
+  printf '%s/gsserve\n' "${XDG_CONFIG_HOME:-$HOME/.config}"
 }
 
 default_log_dir() {
-  printf '%s/dotserve/logs\n' "${XDG_STATE_HOME:-$HOME/.local/state}"
+  printf '%s/gsserve/logs\n' "${XDG_STATE_HOME:-$HOME/.local/state}"
 }
 
 # 32 hex characters from the best source available.
@@ -383,7 +383,7 @@ read_cfg_value() {
 # refused is a placeholder that got shipped, copied out of a forum post, or left in a
 # template -- which is how a server ends up administered by a stranger.
 readonly WEAK_RCON_PASSWORDS="changeme password rcon rconpassword admin secret \
-letmein dotserve default 123456 CHANGEME @RCON_PASSWORD@"
+letmein gsserve default 123456 CHANGEME @RCON_PASSWORD@"
 
 check_rcon_password() {
   local cfg="$1" value
@@ -464,7 +464,7 @@ print_banner() {
 
   say ""
   say "${C_BOLD}${HOSTNAME_VALUE:-A dot server}${C_OFF}"
-  say "${C_DIM}dotserve $DOTSERVE_VERSION · Godot ${version:-unknown}${C_OFF}"
+  say "${C_DIM}gsserve $GSSERVE_VERSION · Godot ${version:-unknown}${C_OFF}"
   say ""
   say "  Players on this machine   ${C_GREEN}localhost:$PORT${C_OFF}"
 
@@ -492,7 +492,7 @@ print_service() {
 
   cat <<UNIT
 [Unit]
-Description=dotserve — ${HOSTNAME_VALUE:-A dot server}
+Description=gsserve — ${HOSTNAME_VALUE:-A dot server}
 After=network-online.target
 Wants=network-online.target
 
@@ -502,12 +502,12 @@ User=$(id -un)
 WorkingDirectory=$PROJECT_DIR
 ExecStart=$self --project $PROJECT_DIR --port $PORT${GAME:+ --game $GAME}${ENABLE_WEB:+ --web} --config $CONFIG_DIR --log $LOG_DIR --no-banner
 
-# dotserve has its own backoff, and two supervisors backing off against each other
+# gsserve has its own backoff, and two supervisors backing off against each other
 # produce a restart storm that looks like a crash loop. Let systemd own it.
 Restart=on-failure
 RestartSec=5
 
-# A misconfiguration is not something to retry. These are dotserve's own codes for
+# A misconfiguration is not something to retry. These are gsserve's own codes for
 # "no Godot", "no project", "bad config" and "port in use"; retrying any of them
 # just fills the journal.
 RestartPreventExitStatus=$EXIT_NO_GODOT $EXIT_NO_PROJECT $EXIT_CONFIG $EXIT_PORT
@@ -533,13 +533,13 @@ build_command() {
     --path "$PROJECT_DIR"
   )
 
-  # dot-server reads its configuration from argv with a --sv- prefix
+  # gs-server reads its configuration from argv with a --sv- prefix
   # (GSServerConfig.cli_prefix) and refuses secrets there (GSConfig.sensitive_keys),
   # which is why the RCON password is only ever in server.cfg and never on this line.
   #
   # [b]--sv-, and the key names are GSServerConfig's own.[/b] This passed --server-port
-  # and friends for as long as it existed. dot-core's apply_cli skips any argument
-  # without the prefix in silence, so every server setting dotserve offered did nothing
+  # and friends for as long as it existed. gs-core's apply_cli skips any argument
+  # without the prefix in silence, so every server setting gsserve offered did nothing
   # and the server ran on its defaults; the self-test could not see it because it runs a
   # fake engine. Spell a new flag the way GSServerConfig's @export is spelled.
   BUILT+=(
@@ -547,7 +547,7 @@ build_command() {
     --sv-port "$PORT"
     --sv-max-players "$MAXPLAYERS"
     --sv-tickrate "$TICKRATE"
-    # An absolute path: dot-server's console accepts one, and the file is the one
+    # An absolute path: gs-server's console accepts one, and the file is the one
     # ensure_server_cfg created in the operator's config directory.
     --sv-startup-config "$CONFIG_DIR/server.cfg"
   )
@@ -555,7 +555,7 @@ build_command() {
   [ -n "$HOSTNAME_VALUE" ] && BUILT+=(--sv-hostname "$HOSTNAME_VALUE")
   [ -n "$TAGS" ] && BUILT+=(--sv-tags "$TAGS")
 
-  # Browsers reach a dot-server over WebSocket on the game port itself (the "dual"
+  # Browsers reach a gs-server over WebSocket on the game port itself (the "dual"
   # transport: TCP for browsers, UDP for native clients). Without --web this is a
   # native-only server. There is no separate WebSocket port any more; --ws-port is
   # accepted and ignored, with a note, so old unit files keep starting.
@@ -641,7 +641,7 @@ main() {
     PROJECT_DIR="$(find_project "$PWD")" || die "$EXIT_NO_PROJECT" \
 "no project.godot here or in any parent directory.
 
-  Run dotserve from inside your Godot project, or pass --project DIR."
+  Run gsserve from inside your Godot project, or pass --project DIR."
   else
     [ -f "$PROJECT_DIR/project.godot" ] || die "$EXIT_NO_PROJECT" \
       "no project.godot in '$PROJECT_DIR'"

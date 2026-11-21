@@ -1,6 +1,6 @@
 # GameSpice Serve
 
-The `dotserve` launcher: a bash script that finds a Godot binary and a project, writes a commented `server.cfg` once, refuses a guessable RCON password, prints the join addresses, and execs a headless GameSpice Server. It is not a Godot project; most family rules about GDScript do not apply. A launcher, not a framework: server behaviour belongs in GameSpice Server.
+The `gsserve` launcher: a bash script that finds a Godot binary and a project, writes a commented `server.cfg` once, refuses a guessable RCON password, prints the join addresses, and execs a headless GameSpice Server. It is not a Godot project; most family rules about GDScript do not apply. A launcher, not a framework: server behaviour belongs in GameSpice Server.
 
 Read the family [CLAUDE.md](../../CLAUDE.md) for context.
 
@@ -15,15 +15,15 @@ Read the family [CLAUDE.md](../../CLAUDE.md) for context.
 
 | Path | What |
 | --- | --- |
-| `dotserve` | the launcher (`find_godot`, `check_godot_version`, `ensure_server_cfg`, `check_rcon_password`, `build_command`, `print_service`, `run_with_restart`) |
+| `gsserve` | the launcher (`find_godot`, `check_godot_version`, `ensure_server_cfg`, `check_rcon_password`, `build_command`, `print_service`, `run_with_restart`) |
 | `templates/server.cfg` | the commented first-run config; `@RCON_PASSWORD@` is replaced with a generated one |
-| `install.sh` | symlinks `dotserve` into `~/.local/bin` (or `$PREFIX`) |
+| `install.sh` | symlinks `gsserve` into `~/.local/bin` (or `$PREFIX`) |
 | `tests/selftest.sh` | the suite, with a fake `godot` on `PATH` |
 
 ## Running and testing
 
 ```bash
-bash -n dotserve && bash -n tests/selftest.sh
+bash -n gsserve && bash -n tests/selftest.sh
 tests/selftest.sh
 ```
 
@@ -46,4 +46,4 @@ Exits non-zero on any failure. Run it after any change: two of its checks exist 
 
 ## Open items
 
-- No Windows launcher (`dotserve.ps1` or a `.cmd` shim). The script runs under Git Bash and WSL, which is not the same as supporting Windows.
+- No Windows launcher (`gsserve.ps1` or a `.cmd` shim). The script runs under Git Bash and WSL, which is not the same as supporting Windows.
