@@ -42,7 +42,7 @@ Exits non-zero on any failure. Run it after any change: two of its checks exist 
 
 ## Flags reach GameSpice Server
 
-- **Server settings are passed as `--sv-<key>`, spelled as `DotServerConfig`'s `@export`** (`--sv-max-players`, `--sv-transport-mode`), and the game as `+changegame`. GameSpice Core's `apply_cli` skips any other prefix in silence; `tests/selftest.sh` checks flag and value together for that reason. [history](docs/history.md)
+- **Server settings are passed as `--sv-<key>`, spelled as `GSServerConfig`'s `@export`** (`--sv-max-players`, `--sv-transport-mode`), and the game as `+changegame`. GameSpice Core's `apply_cli` skips any other prefix in silence; `tests/selftest.sh` checks flag and value together for that reason. [history](docs/history.md)
 
 ## Open items
 

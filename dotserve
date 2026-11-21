@@ -534,14 +534,14 @@ build_command() {
   )
 
   # dot-server reads its configuration from argv with a --sv- prefix
-  # (DotServerConfig.cli_prefix) and refuses secrets there (DotConfig.sensitive_keys),
+  # (GSServerConfig.cli_prefix) and refuses secrets there (GSConfig.sensitive_keys),
   # which is why the RCON password is only ever in server.cfg and never on this line.
   #
-  # [b]--sv-, and the key names are DotServerConfig's own.[/b] This passed --server-port
+  # [b]--sv-, and the key names are GSServerConfig's own.[/b] This passed --server-port
   # and friends for as long as it existed. dot-core's apply_cli skips any argument
   # without the prefix in silence, so every server setting dotserve offered did nothing
   # and the server ran on its defaults; the self-test could not see it because it runs a
-  # fake engine. Spell a new flag the way DotServerConfig's @export is spelled.
+  # fake engine. Spell a new flag the way GSServerConfig's @export is spelled.
   BUILT+=(
     --
     --sv-port "$PORT"
