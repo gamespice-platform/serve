@@ -58,6 +58,12 @@ The generated systemd unit lists them under `RestartPreventExitStatus`.
 
 Run `tests/selftest.sh`. It does not start a real server: a fake `godot` on `PATH` stands in for the engine, so it runs on a machine that has none.
 
+## Used by
+
+No game vendors it, since it is a command-line tool and not a Godot addon.
+
+The whole collection is at [zeesgames.com](https://zeesgames.com).
+
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Part of the TMC [GameSpice](https://github.com/gamespice-platform) family of tools. Written with Claude Code and maintained by `gamemann`. It has its own test suite, but little of it has been used by real users yet, so please [open an issue](https://github.com/gamespice-platform/serve/issues) when you hit a rough edge.
+MIT, see [LICENSE](LICENSE). A GameSpice tool built with Claude Code, with a shell self-test you can run offline (see Testing). The games in [Zee's Games](https://zeesgames.com) run on GameSpice servers, but they do not vendor this tool; it is a command-line helper you install on your own machine. Report bugs on the [issue tracker](https://github.com/gamespice-platform/serve/issues).
